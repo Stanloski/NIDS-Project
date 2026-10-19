@@ -1,0 +1,1265 @@
+/* ==========================================================================
+   University of Nigeria, Nsukka - Department of Computer Science
+   Network Intrusion Detection System (NIDS)
+   THE RADAR WATCHTOWER - Air Traffic Control Interface
+   ========================================================================== */
+
+:root {
+    /* RADAR WATCHTOWER - Dark Tactical Palette (Default) */
+    --bg-void: #070B12;
+    --bg-grid: #0A101C;
+    --panel-bg: rgba(13, 20, 34, 0.85);
+    --panel-solid: #0D1422;
+    --panel-border: #1E2A40;
+    --panel-border-bright: #2B3C5C;
+    --panel-corner: #FFB020;
+
+    /* Signal Accents */
+    --amber: #FFB020;
+    --amber-dim: rgba(255, 176, 32, 0.2);
+    --amber-glow: rgba(255, 176, 32, 0.45);
+    
+    --cyan: #4FD1C5;
+    --cyan-dim: rgba(79, 209, 197, 0.15);
+    --cyan-glow: rgba(79, 209, 197, 0.5);
+
+    --coral: #FF4D5E;
+    --coral-dim: rgba(255, 77, 94, 0.18);
+    --coral-glow: rgba(255, 77, 94, 0.55);
+
+    /* Typography Colors */
+    --text-bright: #FFFFFF;
+    --text-main: #D8E1F0;
+    --text-dim: #6F7F99;
+    --text-mono: #A3B3CC;
+
+    /* Fonts */
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-heading: 'Barlow Condensed', sans-serif;
+
+    /* Radar Geometry */
+    --sweep-color: rgba(255, 176, 32, 0.22);
+    --radar-ring: rgba(30, 42, 64, 0.7);
+    --radar-crosshair: rgba(30, 42, 64, 0.5);
+
+    /* UI Dimensions */
+    --topbar-height: 48px;
+    --bottom-strip-height: 96px;
+    --transition-fast: 0.15s ease-out;
+}
+
+[data-theme="light"] {
+    /* RADAR WATCHTOWER - Day Technical Paper Palette */
+    --bg-void: #F1ECE0;
+    --bg-grid: #E8E2D4;
+    --panel-bg: rgba(245, 240, 230, 0.92);
+    --panel-solid: #EBE4D5;
+    --panel-border: rgba(26, 31, 43, 0.25);
+    --panel-border-bright: rgba(26, 31, 43, 0.45);
+    --panel-corner: #B45309;
+
+    --amber: #B45309;
+    --amber-dim: rgba(180, 83, 9, 0.12);
+    --amber-glow: rgba(180, 83, 9, 0.3);
+
+    --cyan: #0F766E;
+    --cyan-dim: rgba(15, 118, 110, 0.12);
+    --cyan-glow: rgba(15, 118, 110, 0.3);
+
+    --coral: #DC2626;
+    --coral-dim: rgba(220, 38, 38, 0.15);
+    --coral-glow: rgba(220, 38, 38, 0.35);
+
+    --text-bright: #0F172A;
+    --text-main: #1E293B;
+    --text-dim: #526077;
+    --text-mono: #334155;
+
+    --sweep-color: rgba(180, 83, 9, 0.15);
+    --radar-ring: rgba(26, 31, 43, 0.2);
+    --radar-crosshair: rgba(26, 31, 43, 0.15);
+}
+
+/* ==========================================================================
+   Base Structure & Scanline Backdrop
+   ========================================================================== */
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    width: 100%;
+    min-height: 100vh;
+    background-color: var(--bg-void);
+    color: var(--text-main);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+}
+
+/* Subtle Tactical Background Grid */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-image: 
+        linear-gradient(to right, var(--panel-border) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--panel-border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.25;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Scanline noise texture */
+body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.04) 0px,
+        rgba(0, 0, 0, 0.04) 1px,
+        transparent 1px,
+        transparent 2px
+    );
+    pointer-events: none;
+    z-index: 999;
+}
+
+/* Typography Hierarchy */
+h1, h2, h3, h4, h5, h6, .display-text {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-bright);
+    line-height: 1.1;
+}
+
+a {
+    color: var(--amber);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+a:hover {
+    color: var(--text-bright);
+}
+
+/* ==========================================================================
+   Thin Top Instrument Bar
+   ========================================================================== */
+
+.watchtower-topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--topbar-height);
+    background: var(--panel-solid);
+    border-bottom: 1px solid var(--panel-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    z-index: 500;
+    backdrop-filter: blur(8px);
+}
+
+.topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.topbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.unn-logo-mini {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    background: #FFFFFF;
+    border-radius: 50%;
+    padding: 1px;
+    border: 1px solid var(--amber);
+}
+
+.brand-title {
+    font-family: var(--font-heading);
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    color: var(--amber);
+}
+
+.brand-dept {
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+    border-left: 1px solid var(--panel-border);
+    padding-left: 10px;
+    display: none;
+}
+
+@media (min-width: 900px) {
+    .brand-dept { display: inline-block; }
+}
+
+/* Navigation Tabs */
+.topbar-nav {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.nav-tab {
+    padding: 6px 14px;
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    border: 1px solid transparent;
+    border-radius: 2px;
+    letter-spacing: 0.06em;
+    transition: all var(--transition-fast);
+}
+
+.nav-tab:hover {
+    color: var(--amber);
+    background: var(--amber-dim);
+    border-color: var(--panel-border);
+}
+
+.nav-tab.active {
+    color: var(--text-bright);
+    background: var(--amber-dim);
+    border: 1px solid var(--amber);
+    box-shadow: 0 0 10px var(--amber-dim);
+}
+
+/* Right Status Indicators & Controls */
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.live-clock {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-main);
+    background: rgba(0, 0, 0, 0.2);
+    padding: 4px 8px;
+    border: 1px solid var(--panel-border);
+    border-radius: 2px;
+    letter-spacing: 0.08em;
+}
+
+.btn-ctrl {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    padding: 5px 10px;
+    border-radius: 2px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all var(--transition-fast);
+}
+
+.btn-ctrl:hover {
+    color: var(--amber);
+    border-color: var(--amber);
+    background: var(--amber-dim);
+}
+
+.btn-ctrl.active {
+    color: var(--cyan);
+    border-color: var(--cyan);
+    background: var(--cyan-dim);
+}
+
+/* ==========================================================================
+   Tactical Framed Panels (Bracket Corners, Sharp Edges)
+   ========================================================================== */
+
+.tactical-frame {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    position: relative;
+    border-radius: 2px;
+    backdrop-filter: blur(10px);
+}
+
+/* Tactical Corner Brackets */
+.tactical-frame::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    width: 8px;
+    height: 8px;
+    border-top: 2px solid var(--panel-corner);
+    border-left: 2px solid var(--panel-corner);
+    pointer-events: none;
+}
+
+.tactical-frame::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    right: -1px;
+    width: 8px;
+    height: 8px;
+    border-bottom: 2px solid var(--panel-corner);
+    border-right: 2px solid var(--panel-corner);
+    pointer-events: none;
+}
+
+.panel-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--panel-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(0, 0, 0, 0.15);
+}
+
+.panel-title {
+    font-family: var(--font-heading);
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--amber);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.panel-tag {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    border: 1px solid var(--panel-border);
+    padding: 2px 6px;
+    border-radius: 2px;
+}
+
+/* ==========================================================================
+   WATCH SCREEN - Air Traffic Control Viewport
+   ========================================================================== */
+
+.watch-viewport {
+    position: fixed;
+    top: var(--topbar-height);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 10;
+}
+
+.watch-main-stage {
+    flex: 1;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 1. Large Central Canvas Radar */
+.radar-canvas-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+}
+
+#radarCanvas {
+    cursor: crosshair;
+}
+
+/* Radar Tooltip HUD */
+.radar-hud-tooltip {
+    position: absolute;
+    display: none;
+    background: var(--panel-solid);
+    border: 1px solid var(--amber);
+    color: var(--text-bright);
+    padding: 8px 12px;
+    font-size: 0.72rem;
+    pointer-events: none;
+    border-radius: 2px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
+    z-index: 400;
+}
+
+.radar-hud-tooltip code {
+    color: var(--amber);
+}
+
+/* 2. Left Floating Panel: SIGNAL FEED */
+.signal-feed-panel {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    width: 320px;
+    bottom: calc(var(--bottom-strip-height) + 16px);
+    display: flex;
+    flex-direction: column;
+    z-index: 20;
+    pointer-events: auto;
+}
+
+.signal-feed-body {
+    flex: 1;
+    padding: 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column-reverse; /* newest at bottom or top */
+    gap: 4px;
+    font-size: 0.74rem;
+}
+
+.feed-line {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.35;
+    color: var(--text-dim);
+}
+
+.feed-line.feed-normal {
+    color: var(--cyan);
+}
+
+.feed-line.feed-attack {
+    color: var(--coral);
+    font-weight: 700;
+    background: var(--coral-dim);
+    padding: 2px 4px;
+    border-left: 2px solid var(--coral);
+}
+
+.feed-line.feed-attack .blinker {
+    animation: markerBlink 0.6s infinite;
+}
+
+@keyframes markerBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+/* 3. Right Floating Panel: THREAT LEVEL & Odometer */
+.threat-meter-panel {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 300px;
+    bottom: calc(var(--bottom-strip-height) + 16px);
+    display: flex;
+    flex-direction: column;
+    z-index: 20;
+    pointer-events: auto;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--panel-border-bright) transparent;
+}
+
+.threat-meter-panel::-webkit-scrollbar,
+.signal-feed-body::-webkit-scrollbar,
+.signature-body::-webkit-scrollbar {
+    width: 4px;
+}
+
+.threat-meter-panel::-webkit-scrollbar-thumb,
+.signal-feed-body::-webkit-scrollbar-thumb,
+.signature-body::-webkit-scrollbar-thumb {
+    background: var(--panel-border-bright);
+    border-radius: 2px;
+}
+
+.meter-scale-box {
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.threat-segments-col {
+    display: flex;
+    flex-direction: column-reverse; /* CALM at bottom, CRITICAL at top */
+    gap: 3px;
+}
+
+.threat-segment {
+    padding: 6px 12px;
+    border: 1px solid var(--panel-border);
+    font-family: var(--font-heading);
+    font-size: 0.95rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    opacity: 0.3;
+    transition: opacity var(--transition-fast), background-color var(--transition-fast);
+}
+
+.threat-segment.active {
+    opacity: 1;
+}
+
+.threat-segment[data-level="CALM"].active {
+    color: var(--cyan);
+    border-color: var(--cyan);
+    background: var(--cyan-dim);
+}
+
+.threat-segment[data-level="WATCH"].active {
+    color: #68D391;
+    border-color: #68D391;
+    background: rgba(104, 211, 145, 0.15);
+}
+
+.threat-segment[data-level="ELEVATED"].active {
+    color: var(--amber);
+    border-color: var(--amber);
+    background: var(--amber-dim);
+}
+
+.threat-segment[data-level="HIGH"].active {
+    color: #ED8936;
+    border-color: #ED8936;
+    background: rgba(237, 137, 54, 0.2);
+}
+
+.threat-segment[data-level="CRITICAL"].active {
+    color: var(--coral);
+    border-color: var(--coral);
+    background: var(--coral-dim);
+    animation: alertPulseCritical 0.8s infinite;
+}
+
+@keyframes alertPulseCritical {
+    0%, 100% { box-shadow: 0 0 10px var(--coral-glow); }
+    50% { box-shadow: 0 0 20px var(--coral); }
+}
+
+/* Odometer Numerical Display */
+.odometer-grid {
+    padding: 10px 14px;
+    border-top: 1px solid var(--panel-border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.odometer-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.odo-label {
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    margin-bottom: 1px;
+}
+
+.odo-number {
+    font-family: var(--font-heading);
+    font-size: 1.7rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: 0.04em;
+    color: var(--text-bright);
+}
+
+.odo-number.coral { color: var(--coral); }
+.odo-number.cyan { color: var(--cyan); }
+.odo-number.amber { color: var(--amber); }
+
+/* Model Confidence Compact Arc */
+.model-confidence-box {
+    padding: 10px 14px;
+    border-top: 1px solid var(--panel-border);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.conf-arc-svg {
+    width: 50px;
+    height: 50px;
+}
+
+/* 4. Bottom Strip: "PULSE" ECG & Ticker Tape */
+.watch-bottom-strip {
+    height: var(--bottom-strip-height);
+    background: var(--panel-solid);
+    border-top: 1px solid var(--panel-border);
+    display: flex;
+    flex-direction: column;
+    z-index: 30;
+}
+
+.pulse-canvas-wrapper {
+    flex: 1;
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+}
+
+#pulseCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.ticker-tape {
+    height: 24px;
+    background: rgba(0, 0, 0, 0.4);
+    border-top: 1px solid var(--panel-border);
+    overflow: hidden;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+}
+
+.ticker-content {
+    display: inline-block;
+    padding-left: 100%;
+    animation: tickerGlide 35s linear infinite;
+    font-size: 0.7rem;
+    color: var(--amber);
+    letter-spacing: 0.06em;
+}
+
+@keyframes tickerGlide {
+    0% { transform: translate3d(0, 0, 0); }
+    100% { transform: translate3d(-100%, 0, 0); }
+}
+
+/* 5. Physical Industrial Rocker Switch (Center Control) */
+.switch-control-pod {
+    position: absolute;
+    bottom: calc(var(--bottom-strip-height) + 16px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--panel-solid);
+    border: 1px solid var(--panel-border);
+    padding: 8px 18px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-radius: 2px;
+    z-index: 40;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.status-lamp {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #4A5568;
+    border: 1px solid #718096;
+    transition: all var(--transition-fast);
+}
+
+.status-lamp.lit {
+    background: var(--cyan);
+    border-color: #FFFFFF;
+    box-shadow: 0 0 10px var(--cyan-glow);
+    animation: lampPulse 1.2s infinite;
+}
+
+@keyframes lampPulse {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.3); opacity: 1; }
+}
+
+.rocker-btn {
+    background: #141C2E;
+    border: 1px solid var(--panel-border-bright);
+    color: var(--text-bright);
+    font-family: var(--font-heading);
+    font-size: 0.95rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    padding: 8px 20px;
+    cursor: pointer;
+    border-radius: 2px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all var(--transition-fast);
+}
+
+.rocker-btn:hover {
+    border-color: var(--amber);
+    color: var(--amber);
+    box-shadow: 0 0 12px var(--amber-dim);
+}
+
+.rocker-btn.active {
+    background: var(--coral);
+    border-color: var(--coral);
+    color: #FFFFFF;
+    box-shadow: 0 0 16px var(--coral-glow);
+}
+
+/* 6. Signature Slide-out Panel (Top Indicators) */
+.signature-panel {
+    position: fixed;
+    top: var(--topbar-height);
+    right: -360px;
+    width: 350px;
+    bottom: 0;
+    background: var(--panel-solid);
+    border-left: 1px solid var(--amber);
+    z-index: 600;
+    transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.6);
+}
+
+.signature-panel.open {
+    right: 0;
+}
+
+.signature-body {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.signature-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sig-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+}
+
+.sig-name {
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.sig-score {
+    color: var(--amber);
+    font-weight: 700;
+}
+
+.sig-scanline-track {
+    height: 6px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--panel-border);
+    position: relative;
+    overflow: hidden;
+}
+
+.sig-scanline-fill {
+    height: 100%;
+    background: var(--amber);
+    box-shadow: 0 0 8px var(--amber-glow);
+    transition: width 0.6s ease;
+}
+
+/* Attack Vignette Red Flash on Screen Edges */
+.threat-vignette {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    box-shadow: inset 0 0 80px rgba(255, 77, 94, 0);
+    pointer-events: none;
+    z-index: 450;
+    transition: box-shadow 0.1s ease-out;
+}
+
+.threat-vignette.flash {
+    box-shadow: inset 0 0 100px rgba(255, 77, 94, 0.65);
+}
+
+/* ==========================================================================
+   INSPECT SCREEN - Specimen Scanner (Manual Predict)
+   ========================================================================== */
+
+.inspect-container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 0 20px;
+    position: relative;
+    z-index: 10;
+}
+
+.specimen-bay {
+    position: relative;
+    overflow: hidden;
+}
+
+.specimen-scanline {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--amber);
+    box-shadow: 0 0 16px var(--amber);
+    top: 0;
+    display: none;
+    z-index: 100;
+}
+
+.specimen-scanline.scanning {
+    display: block;
+    animation: scanSweepDown 1.1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes scanSweepDown {
+    0% { top: 0; opacity: 1; }
+    85% { top: 100%; opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+}
+
+.field-grid-dense {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    padding: 16px;
+}
+
+.telemetry-input-wrap {
+    display: flex;
+    flex-direction: column;
+}
+
+.telemetry-input-wrap label {
+    font-size: 0.66rem;
+    color: var(--text-dim);
+    margin-bottom: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.telemetry-input {
+    background: #090F1A;
+    border: 1px solid var(--panel-border);
+    color: var(--text-bright);
+    padding: 6px 8px;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    border-radius: 2px;
+    outline: none;
+    transition: border-color var(--transition-fast);
+}
+
+[data-theme="light"] .telemetry-input {
+    background: #FFFFFF;
+}
+
+.telemetry-input:focus {
+    border-color: var(--amber);
+    box-shadow: 0 0 8px var(--amber-dim);
+}
+
+/* Impact Verdict Stamp */
+.verdict-stamp-wrap {
+    display: none;
+    margin-top: 20px;
+    padding: 24px;
+    text-align: center;
+    position: relative;
+}
+
+.verdict-stamp-wrap.show {
+    display: block;
+    animation: stampSlam 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+}
+
+@keyframes stampSlam {
+    0% { transform: scale(1.6); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.verdict-stamp {
+    display: inline-block;
+    padding: 12px 28px;
+    border: 3px solid;
+    font-family: var(--font-heading);
+    font-size: 2.2rem;
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    transform: rotate(-1deg);
+    border-radius: 4px;
+}
+
+.verdict-stamp.attack {
+    border-color: var(--coral);
+    color: var(--coral);
+    background: var(--coral-dim);
+    box-shadow: 0 0 30px var(--coral-glow);
+}
+
+.verdict-stamp.normal {
+    border-color: var(--cyan);
+    color: var(--cyan);
+    background: var(--cyan-dim);
+    box-shadow: 0 0 30px var(--cyan-glow);
+}
+
+/* ==========================================================================
+   BATCH SCREEN - Scanner Bay & Square Tile Mosaic (CSV Upload)
+   ========================================================================== */
+
+.scanner-bay-dropzone {
+    border: 2px dashed var(--panel-border-bright);
+    padding: 40px 20px;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.scanner-bay-dropzone:hover, .scanner-bay-dropzone.dragover {
+    border-color: var(--amber);
+    background: var(--amber-dim);
+}
+
+.mosaic-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(18px, 1fr));
+    gap: 4px;
+    padding: 16px;
+    max-height: 240px;
+    overflow-y: auto;
+    border: 1px solid var(--panel-border);
+    background: rgba(0, 0, 0, 0.3);
+    margin-top: 16px;
+}
+
+.mosaic-tile {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 1px;
+    opacity: 0;
+    transform: scale(0.6);
+    animation: tilePopIn 0.25s forwards;
+}
+
+.mosaic-tile.norm {
+    background: var(--cyan);
+    box-shadow: 0 0 4px var(--cyan-glow);
+}
+
+.mosaic-tile.attk {
+    background: var(--coral);
+    box-shadow: 0 0 6px var(--coral-glow);
+}
+
+@keyframes tilePopIn {
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* ==========================================================================
+   ARCHIVE SCREEN - Flight Departure Board (History)
+   ========================================================================== */
+
+.departure-board-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+}
+
+.departure-board-table th {
+    background: #090F1A;
+    border-bottom: 2px solid var(--panel-border-bright);
+    color: var(--text-dim);
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
+[data-theme="light"] .departure-board-table th {
+    background: #E2DAC8;
+}
+
+.departure-board-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--panel-border);
+    color: var(--text-main);
+}
+
+.departure-board-table tr:hover {
+    background: rgba(255, 176, 32, 0.05);
+}
+
+.departure-board-table tr.row-attk {
+    background: var(--coral-dim);
+}
+
+.departure-board-table tr.row-attk td {
+    color: #FFA1AA;
+}
+
+/* ==========================================================================
+   LOGIN SCREEN - Terminal Access Gate
+   ========================================================================== */
+
+.terminal-login-wrapper {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 20px;
+    z-index: 10;
+}
+
+.terminal-card {
+    width: 100%;
+    max-width: 480px;
+    background: var(--panel-solid);
+    border: 1px solid var(--panel-border);
+    padding: 28px;
+    border-radius: 2px;
+    position: relative;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+}
+
+.boot-terminal-log {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    margin-bottom: 20px;
+    min-height: 70px;
+    line-height: 1.5;
+}
+
+.terminal-input-group {
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+}
+
+.terminal-input-group label {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+    letter-spacing: 0.05em;
+}
+
+.terminal-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.terminal-input {
+    width: 100%;
+    background: #070B12;
+    border: 1px solid var(--panel-border-bright);
+    color: var(--text-bright);
+    padding: 10px 12px;
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    border-radius: 2px;
+    outline: none;
+    transition: border-color var(--transition-fast);
+}
+
+[data-theme="light"] .terminal-input {
+    background: #FFFFFF;
+}
+
+.terminal-input:focus {
+    border-color: var(--amber);
+    box-shadow: 0 0 10px var(--amber-dim);
+}
+
+/* Shake on wrong password */
+.terminal-shake {
+    animation: terminalShake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    border-color: var(--coral) !important;
+}
+
+@keyframes terminalShake {
+    10%, 90% { transform: translate3d(-2px, 0, 0); }
+    20%, 80% { transform: translate3d(3px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-5px, 0, 0); }
+    40%, 60% { transform: translate3d(5px, 0, 0); }
+}
+
+/* ==========================================================================
+   Footer
+   ========================================================================== */
+
+.watchtower-footer {
+    padding: 10px 20px;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    text-align: center;
+    border-top: 1px solid var(--panel-border);
+    background: var(--panel-solid);
+    letter-spacing: 0.08em;
+}
+
+/* ==========================================================================
+   Responsive Adaptations (375px & 1440px)
+   ========================================================================== */
+
+@media (max-width: 900px) {
+    :root {
+        --topbar-height: auto;
+    }
+
+    .watchtower-topbar {
+        position: relative;
+        height: auto;
+        padding: 8px 12px;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .topbar-left {
+        width: 100%;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .topbar-nav {
+        width: 100%;
+        display: flex;
+        overflow-x: auto;
+        gap: 4px;
+        padding-bottom: 4px;
+    }
+
+    .nav-tab {
+        padding: 4px 8px;
+        font-size: 0.68rem;
+        white-space: nowrap;
+    }
+
+    .topbar-right {
+        width: 100%;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    main {
+        padding-top: 0 !important;
+    }
+
+    .watch-viewport {
+        position: relative;
+        top: 0;
+        min-height: auto;
+        overflow-y: visible;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .watch-main-stage {
+        height: auto;
+        flex: none;
+        display: flex;
+        flex-direction: column;
+        padding: 12px;
+        gap: 16px;
+    }
+
+    .radar-canvas-container {
+        position: relative;
+        height: 320px;
+        width: 100%;
+    }
+
+    .signal-feed-panel {
+        position: static;
+        width: 100%;
+        height: 240px;
+        margin: 0;
+    }
+
+    .switch-control-pod {
+        position: static;
+        transform: none;
+        margin: 8px auto;
+        width: max-content;
+    }
+
+    .threat-meter-panel {
+        position: static;
+        width: 100%;
+        height: auto;
+        margin: 0;
+    }
+
+    .watch-bottom-strip {
+        position: static;
+        height: auto;
+        min-height: var(--bottom-strip-height);
+    }
+
+    .signature-panel {
+        width: 100%;
+        right: -100%;
+    }
+}
+
+/* Accessibility: prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

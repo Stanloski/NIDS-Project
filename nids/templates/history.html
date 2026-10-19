@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="inspect-container">
+    <!-- Header Control Bar with Search and Filter Chips -->
+    <div class="tactical-frame" style="margin-bottom: 16px; padding: 14px 18px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+            <div>
+                <span class="panel-title" style="font-size: 1.1rem;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    ARCHIVE LOG // FLIGHT DEPARTURE BOARD
+                </span>
+                <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">
+                    CHRONOLOGICAL AUDIT TRAIL OF INTERCEPTED PACKET VECTORS
+                </div>
+            </div>
+
+            <!-- Controls: Search Input & Filter Chips -->
+            <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <!-- Search Input -->
+                <div style="position: relative;">
+                    <input type="text" id="archiveSearch" class="telemetry-input" placeholder="SEARCH SERVICE, PROTO..." style="width: 200px; padding: 5px 8px; font-size: 0.75rem;">
+                </div>
+
+                <!-- Filter Chips -->
+                <div style="display: flex; gap: 6px;">
+                    <button type="button" class="btn-ctrl filter-chip active" data-filter="">
+                        [ ALL TRAFFIC ]
+                    </button>
+                    <button type="button" class="btn-ctrl filter-chip" data-filter="Normal" style="color: var(--cyan);">
+                        [ BENIGN ONLY ]
+                    </button>
+                    <button type="button" class="btn-ctrl filter-chip" data-filter="Attack" style="color: var(--coral);">
+                        [ THREATS ONLY ]
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Departure Board Table Frame -->
+    <div class="tactical-frame" style="overflow-x: auto;">
+        <table id="departureBoard" class="departure-board-table">
+            <thead>
+                <tr>
+                    <th style="width: 80px;">ID</th>
+                    <th style="width: 100px;">TIMESTAMP</th>
+                    <th style="width: 90px;">PROTO</th>
+                    <th style="width: 110px;">SERVICE</th>
+                    <th style="width: 120px;">VERDICT</th>
+                    <th style="width: 160px;">CONFIDENCE</th>
+                    <th>TELEMETRY BYTES</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Rows injected dynamically via history.js with split flap animation -->
+            </tbody>
+        </table>
+
+        <!-- Pagination Footer -->
+        <div style="padding: 12px 18px; border-top: 1px solid var(--panel-border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; background: rgba(0, 0, 0, 0.25);">
+            <div id="archivePaginationInfo" style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-dim); letter-spacing: 0.05em;">
+                SHOWING 0 - 0 OF 0 VECTORS
+            </div>
+            <div id="archivePaginationBtns" style="display: flex; gap: 6px;">
+                <!-- Injected via history.js -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/history.js"></script>
+{% endblock %}

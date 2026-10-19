@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en" {% if request.args.get('theme') == 'light' %}data-theme="light"{% endif %}>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACCESS GATE // UNN RADAR WATCHTOWER NIDS</title>
+    
+    <!-- Self-hosted Fonts & Radar Watchtower Tactical CSS -->
+    <link rel="stylesheet" href="/static/css/fonts.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body style="overflow: hidden; background: #070B12;">
+    <!-- Faint Background Canvas Radar Sweep -->
+    <canvas id="loginRadarCanvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; opacity: 0.22; z-index: 1;"></canvas>
+
+    <div class="terminal-login-wrapper">
+        <!-- Terminal Framed Panel -->
+        <div class="tactical-frame terminal-card {% if error %}terminal-shake{% endif %}" id="loginTerminalCard" style="z-index: 10;">
+            <!-- Terminal Header with UNN Logo & Motto -->
+            <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 16px; border-bottom: 1px solid var(--panel-border); padding-bottom: 14px;">
+                <img src="/static/unn-logo.png" alt="University of Nigeria" style="height: 48px; width: auto; object-fit: contain;">
+                <div>
+                    <div style="font-family: var(--font-heading); font-size: 1.15rem; font-weight: 800; letter-spacing: 0.08em; color: var(--amber);">
+                        UNN RADAR WATCHTOWER
+                    </div>
+                    <div style="font-size: 0.68rem; color: var(--text-dim); letter-spacing: 0.05em;">
+                        DEPARTMENT OF COMPUTER SCIENCE
+                    </div>
+                    <div style="font-size: 0.65rem; color: var(--amber); font-style: italic; margin-top: 2px;">
+                        &ldquo;To Restore the Dignity of Man&rdquo;
+                    </div>
+                </div>
+            </div>
+
+            <!-- Boot Sequence Terminal Typing Box -->
+            <div class="boot-terminal-log" id="bootTerminalLog"></div>
+
+            <!-- Error Banner & Lockout Countdown -->
+            {% if error %}
+                <div class="tactical-frame" id="loginAlertBox" style="padding: 10px 14px; margin-bottom: 16px; border-color: var(--coral); color: var(--coral); background: var(--coral-dim); font-size: 0.76rem;">
+                    <div>[SECURITY ALERT] {{ error }}</div>
+                    {% if retry_after and retry_after > 0 %}
+                        <div id="lockoutCountdown" style="margin-top: 6px; font-family: var(--font-mono); color: var(--amber); font-size: 0.74rem;">
+                            ACCESS GATE LOCKED. RETRY WINDOW: <span id="timerSpan" style="font-weight: 800;">{{ retry_after }}</span>s
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            <!-- Credential Fields Panel (Revealed after boot sequence) -->
+            <div id="credentialPanel" style="display: none;">
+                <form id="loginForm" method="POST" action="{{ url_for('login_view') }}" autocomplete="off">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                    <div class="terminal-input-group">
+                        <label for="usernameInput">// OPERATOR IDENTITY (USERNAME)</label>
+                        <input type="text"
+                               id="usernameInput"
+                               name="username"
+                               class="telemetry-input"
+                               required
+                               autocomplete="off"
+                               placeholder="ENTER USERNAME"
+                               value="">
+                    </div>
+
+                    <div class="terminal-input-group">
+                        <label for="passwordInput">// CRYPTOGRAPHIC ACCESS KEY</label>
+                        <div style="position: relative; display: flex; align-items: center;">
+                            <input type="password"
+                                   id="passwordInput"
+                                   name="password"
+                                   class="telemetry-input"
+                                   required
+                                   autocomplete="new-password"
+                                   placeholder="ENTER PASSWORD"
+                                   value=""
+                                   style="width: 100%; padding-right: 36px;">
+                            <button type="button" class="password-toggle-btn" data-target="passwordInput" aria-label="Toggle password visibility" style="position: absolute; right: 8px; background: none; border: none; color: var(--text-dim); cursor: pointer; display: flex; align-items: center;">
+                                <svg class="eye-open" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                                <svg class="eye-closed" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="loginSubmitBtn" class="btn-ctrl" style="width: 100%; padding: 10px; margin-top: 8px; font-family: var(--font-heading); font-size: 1rem; font-weight: 800; letter-spacing: 0.12em; color: var(--amber); border-color: var(--amber); justify-content: center;">
+                        <span id="btnText">[ ENGAGE OPERATOR ACCESS GATE ]</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Footer Meta -->
+            <div style="margin-top: 20px; font-size: 0.65rem; color: var(--text-dim); text-align: center; border-top: 1px solid var(--panel-border); padding-top: 10px;">
+                AIR TRAFFIC CONTROL ARCHITECTURE // UNN NIDS v2.0
+            </div>
+        </div>
+    </div>
+
+    <!-- Background Radar & Boot Sequence Script -->
+    <script src="/static/js/main.js"></script>
+    <script>
+        (function () {
+            'use strict';
+
+            // 1. Faint Background Radar Sweep
+            const rCanvas = document.getElementById('loginRadarCanvas');
+            if (rCanvas) {
+                const rctx = rCanvas.getContext('2d');
+                let rw = 0, rh = 0, rcx = 0, rcy = 0, rRad = 0;
+                let rSweep = 0;
+
+                function resizeRadar() {
+                    rw = rCanvas.width = window.innerWidth;
+                    rh = rCanvas.height = window.innerHeight;
+                    rcx = rw / 2;
+                    rcy = rh / 2;
+                    rRad = Math.min(rw, rh) * 0.48;
+                }
+                window.addEventListener('resize', resizeRadar);
+                resizeRadar();
+
+                function drawLoginRadar() {
+                    requestAnimationFrame(drawLoginRadar);
+                    rctx.clearRect(0, 0, rw, rh);
+
+                    // Rings
+                    rctx.strokeStyle = 'rgba(79, 209, 197, 0.15)';
+                    rctx.lineWidth = 1;
+                    [0.3, 0.6, 0.95].forEach(ratio => {
+                        rctx.beginPath();
+                        rctx.arc(rcx, rcy, rRad * ratio, 0, Math.PI * 2);
+                        rctx.stroke();
+                    });
+
+                    // Crosshairs
+                    rctx.beginPath();
+                    rctx.moveTo(rcx - rRad, rcy); rctx.lineTo(rcx + rRad, rcy);
+                    rctx.moveTo(rcx, rcy - rRad); rctx.lineTo(rcx, rcy + rRad);
+                    rctx.stroke();
+
+                    // Sweep Beam
+                    rSweep = (rSweep + 0.015) % (Math.PI * 2);
+                    const grad = rctx.createRadialGradient(rcx, rcy, 0, rcx, rcy, rRad);
+                    grad.addColorStop(0, 'rgba(255, 176, 32, 0)');
+                    grad.addColorStop(1, 'rgba(255, 176, 32, 0.18)');
+                    rctx.fillStyle = grad;
+                    rctx.beginPath();
+                    rctx.moveTo(rcx, rcy);
+                    rctx.arc(rcx, rcy, rRad, rSweep - 0.5, rSweep, false);
+                    rctx.closePath();
+                    rctx.fill();
+                }
+                drawLoginRadar();
+            }
+
+            // 2. Terminal Boot Sequence Typing
+            const bootLines = [
+                "> Initialising Random Forest model... OK",
+                "> Loading NSL-KDD signatures... OK",
+                "> Awaiting operator credentials"
+            ];
+            const logEl = document.getElementById('bootTerminalLog');
+            const credPanel = document.getElementById('credentialPanel');
+            const hasError = {% if error %}true{% else %}false{% endif %};
+            const isBooted = new URLSearchParams(window.location.search).has('booted');
+            const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            function revealCredentials() {
+                if (credPanel) credPanel.style.display = 'block';
+            }
+
+            if (hasError || reducedMotion || isBooted) {
+                // If already errored or booted or reduced motion, show immediately
+                if (logEl) {
+                    logEl.innerHTML = bootLines.map(l => `<div>${l}</div>`).join('');
+                }
+                revealCredentials();
+            } else {
+                let lineIdx = 0;
+                let charIdx = 0;
+                let currentDiv = null;
+
+                function typeChar() {
+                    if (lineIdx >= bootLines.length) {
+                        setTimeout(revealCredentials, 200);
+                        return;
+                    }
+
+                    if (!currentDiv) {
+                        currentDiv = document.createElement('div');
+                        if (lineIdx === 2) currentDiv.style.color = 'var(--amber)';
+                        logEl.appendChild(currentDiv);
+                        charIdx = 0;
+                    }
+
+                    const targetLine = bootLines[lineIdx];
+                    if (charIdx < targetLine.length) {
+                        currentDiv.textContent += targetLine.charAt(charIdx);
+                        charIdx++;
+                        setTimeout(typeChar, 18);
+                    } else {
+                        lineIdx++;
+                        currentDiv = null;
+                        setTimeout(typeChar, 120);
+                    }
+                }
+                typeChar();
+            }
+
+            // 3. Prevent Form Autofill Cache on Back Button / Page Show
+            window.addEventListener('pageshow', () => {
+                const u = document.getElementById('usernameInput');
+                const p = document.getElementById('passwordInput');
+                if (u) u.value = '';
+                if (p) p.value = '';
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    if (btnText) btnText.textContent = '[ ENGAGE OPERATOR ACCESS GATE ]';
+                }
+            });
+
+            // 4. Form Submit State
+            const loginForm = document.getElementById('loginForm');
+            const submitBtn = document.getElementById('loginSubmitBtn');
+            const btnText = document.getElementById('btnText');
+            if (loginForm && submitBtn) {
+                loginForm.addEventListener('submit', () => {
+                    if (btnText) btnText.textContent = '[ AUTHENTICATING TELEMETRY BUS... ]';
+                    setTimeout(() => { submitBtn.disabled = true; }, 20);
+                });
+            }
+
+            // 5. 429 Lockout Countdown in Mono Digits
+            const timerSpan = document.getElementById('timerSpan');
+            if (timerSpan) {
+                let remaining = parseInt(timerSpan.textContent, 10);
+                if (remaining > 0) {
+                    if (submitBtn) submitBtn.disabled = true;
+                    const interval = setInterval(() => {
+                        remaining -= 1;
+                        if (remaining <= 0) {
+                            clearInterval(interval);
+                            const alertBox = document.getElementById('loginAlertBox');
+                            if (alertBox) {
+                                alertBox.style.borderColor = 'var(--cyan)';
+                                alertBox.style.color = 'var(--cyan)';
+                                alertBox.style.background = 'var(--cyan-dim)';
+                                alertBox.innerHTML = '[LOCKOUT WINDOW EXPIRED] OPERATOR MAY RETRY CREDENTIALS';
+                            }
+                            if (submitBtn) submitBtn.disabled = false;
+                        } else {
+                            timerSpan.textContent = remaining;
+                        }
+                    }, 1000);
+                }
+            }
+        })();
+    </script>
+</body>
+</html>

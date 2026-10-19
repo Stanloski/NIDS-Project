@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en" {% if request.args.get('theme') == 'light' %}data-theme="light"{% endif %}>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title | default("RADAR WATCHTOWER") }} // UNN NIDS</title>
+    
+    <!-- Self-hosted Fonts & Radar Watchtower Tactical CSS -->
+    <link rel="stylesheet" href="/static/css/fonts.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- Tactical Red Flash Vignette on Attack -->
+    <div id="threatVignette" class="threat-vignette"></div>
+
+    <!-- Thin Top Instrument Bar -->
+    <header class="watchtower-topbar">
+        <div class="topbar-left">
+            <div class="topbar-brand">
+                <img src="/static/unn-logo.png" alt="UNN Crest" class="unn-logo-mini" style="width: 28px; height: 28px; object-fit: contain;">
+                <span class="brand-title">UNN NIDS</span>
+                <span class="brand-dept">RADAR WATCHTOWER // DEPT OF COMPUTER SCIENCE</span>
+            </div>
+
+            <nav class="topbar-nav">
+                <a href="{{ url_for('dashboard_view') }}" class="nav-tab {% if request.path == '/' %}active{% endif %}">
+                    [ 01 // WATCH ]
+                </a>
+                <a href="{{ url_for('predict_view') }}" class="nav-tab {% if request.path == '/predict' %}active{% endif %}">
+                    [ 02 // INSPECT ]
+                </a>
+                <a href="{{ url_for('upload_view') }}" class="nav-tab {% if request.path == '/upload' %}active{% endif %}">
+                    [ 03 // BATCH ]
+                </a>
+                <a href="{{ url_for('history_view') }}" class="nav-tab {% if request.path == '/history' %}active{% endif %}">
+                    [ 04 // ARCHIVE ]
+                </a>
+            </nav>
+        </div>
+
+        <div class="topbar-right">
+            <!-- UTC Chronometer -->
+            <div class="live-clock" id="liveClock">00:00:00 UTC</div>
+
+            <!-- Optional Tactical Sonar Sound Switch -->
+            <button type="button" class="btn-ctrl" id="audioToggleBtn" title="Toggle Sonar Audio">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                </svg>
+                <span id="audioToggleLabel">AUDIO: OFF</span>
+            </button>
+
+            <!-- Day / Night Theme Toggle -->
+            <button type="button" class="btn-ctrl" id="themeToggleBtn" title="Toggle Day / Night Radar Visuals">
+                <span id="themeToggleLabel">DAY</span>
+            </button>
+
+            <!-- Sign Out Button -->
+            <a href="{{ url_for('logout_view') }}" class="btn-ctrl" title="Sign Out of Watchtower">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+                    <line x1="12" y1="2" x2="12" y2="12"></line>
+                </svg>
+                <span>DISCONNECT</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Viewport Body -->
+    <main style="padding-top: var(--topbar-height);">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div style="position: fixed; top: 56px; right: 20px; z-index: 600; display: flex; flex-direction: column; gap: 8px;">
+                    {% for category, message in messages %}
+                        <div class="tactical-frame" style="padding: 8px 16px; font-size: 0.76rem; border-color: var(--amber); color: var(--amber);">
+                            [NOTICE] {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Tactical Footer -->
+    <footer class="watchtower-footer">
+        UNIVERSITY OF NIGERIA, NSUKKA  /  DEPARTMENT OF COMPUTER SCIENCE
+    </footer>
+
+    <!-- CSRF Token -->
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    <!-- Main JavaScript Core -->
+    <script src="/static/js/main.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

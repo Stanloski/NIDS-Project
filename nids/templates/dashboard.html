@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="watch-viewport">
+    <div class="watch-main-stage">
+        <!-- 1. Central Radar Canvas -->
+        <div class="radar-canvas-container">
+            <canvas id="radarCanvas"></canvas>
+            <div id="radarHudTooltip" class="radar-hud-tooltip"></div>
+        </div>
+
+        <!-- 2. Left Floating Panel: SIGNAL FEED -->
+        <div class="tactical-frame signal-feed-panel">
+            <div class="panel-header">
+                <span class="panel-title">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                    SIGNAL FEED
+                </span>
+                <span class="panel-tag">LIVE STREAM</span>
+            </div>
+            <div id="signalFeedBody" class="signal-feed-body">
+                <div class="feed-line feed-normal">--:--:-- SYSTEM BOOT // NSL-KDD INGESTION READY</div>
+                <div class="feed-line feed-normal">--:--:-- AZIMUTH SWEEP ALIGNED // CORE TCP / MID UDP / PERIMETER ICMP</div>
+            </div>
+        </div>
+
+        <!-- 3. Right Floating Panel: THREAT LEVEL & Odometer -->
+        <div class="tactical-frame threat-meter-panel">
+            <div class="panel-header">
+                <span class="panel-title">THREAT LEVEL</span>
+                <button type="button" class="btn-ctrl" id="btnToggleSignature" title="Open Top Feature Indicators" style="padding: 2px 8px; font-size: 0.65rem;">
+                    TOP INDICATORS
+                </button>
+            </div>
+
+            <!-- 5-Segment Dynamic Threat Meter -->
+            <div class="meter-scale-box">
+                <div class="threat-segments-col">
+                    <div class="threat-segment" data-level="CRITICAL">
+                        <span>05 // CRITICAL</span>
+                        <span>&gt; 60%</span>
+                    </div>
+                    <div class="threat-segment" data-level="HIGH">
+                        <span>04 // HIGH</span>
+                        <span>35 - 60%</span>
+                    </div>
+                    <div class="threat-segment" data-level="ELEVATED">
+                        <span>03 // ELEVATED</span>
+                        <span>15 - 35%</span>
+                    </div>
+                    <div class="threat-segment" data-level="WATCH">
+                        <span>02 // WATCH</span>
+                        <span>1 - 15%</span>
+                    </div>
+                    <div class="threat-segment active" data-level="CALM">
+                        <span>01 // CALM</span>
+                        <span>0% RATE</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rolling Odometer Stats -->
+            <div class="odometer-grid">
+                <div class="odometer-item">
+                    <span class="odo-label">RECORDS OBSERVED</span>
+                    <span class="odo-number cyan" id="odoRecords">{{ stats.total_records }}</span>
+                </div>
+                <div class="odometer-item">
+                    <span class="odo-label">ATTACKS INTERCEPTED</span>
+                    <span class="odo-number coral" id="odoAttacks">{{ stats.attacks_detected }}</span>
+                </div>
+                <div class="odometer-item">
+                    <span class="odo-label">ATTACK RATIO</span>
+                    <span class="odo-number amber" id="odoAttackRate">{{ stats.attack_percentage }}%</span>
+                </div>
+            </div>
+
+            <!-- Model Confidence Compact Arc -->
+            <div class="model-confidence-box">
+                <svg class="conf-arc-svg" viewBox="0 0 36 36">
+                    <path class="circle-bg"
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                          fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="3" />
+                    <path class="circle"
+                          stroke-dasharray="{{ stats.model_accuracy }}, 100"
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                          fill="none" stroke="var(--amber)" stroke-width="3" stroke-linecap="round" />
+                </svg>
+                <div>
+                    <div style="font-size: 0.65rem; color: var(--text-dim); letter-spacing: 0.08em;">MODEL CONFIDENCE</div>
+                    <div style="font-family: var(--font-heading); font-size: 1.25rem; font-weight: 800; color: var(--amber);">
+                        {{ stats.model_accuracy }}%
+                    </div>
+                    <div style="font-size: 0.62rem; color: var(--text-dim);">NSL-KDD RANDOM FOREST</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Physical Rocker Switch Control Pod -->
+        <div class="switch-control-pod">
+            <span id="statusLamp" class="status-lamp"></span>
+            <button type="button" id="rockerSwitchBtn" class="rocker-btn">
+                <span id="rockerLabel">ENGAGE SWEEP</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 4. Bottom Strip: "PULSE" ECG Heat-strip & Ticker Tape -->
+    <div class="watch-bottom-strip">
+        <div class="pulse-canvas-wrapper">
+            <canvas id="pulseCanvas"></canvas>
+        </div>
+        <div class="ticker-tape">
+            <div id="tickerContent" class="ticker-content">
+                RADAR WATCHTOWER ACTIVE &bull; UNIVERSITY OF NIGERIA, NSUKKA &bull; DEPARTMENT OF COMPUTER SCIENCE &bull; REAL-TIME NSL-KDD NETWORK INTRUSION DETECTION ENGINE &bull; TELEMETRY STREAM NOMINAL &bull; STANDBY FOR NEXT INGESTION VECTOR
+            </div>
+        </div>
+        <div style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-dim); text-align: center; background: var(--panel-solid); padding: 4px 10px; border-top: 1px solid var(--panel-border); letter-spacing: 0.08em;">
+            UNIVERSITY OF NIGERIA, NSUKKA  /  DEPARTMENT OF COMPUTER SCIENCE
+        </div>
+    </div>
+</div>
+
+<style>
+.watchtower-footer { display: none !important; }
+</style>
+
+<!-- 6. Slide-out Signature Panel (Top Indicators) -->
+<div id="signaturePanel" class="signature-panel">
+    <div class="panel-header">
+        <span class="panel-title">TOP INDICATORS</span>
+        <button type="button" class="btn-ctrl" id="btnCloseSignature" title="Close Panel" style="padding: 2px 8px; font-size: 0.68rem;">
+            DISMISS [X]
+        </button>
+    </div>
+    <div style="padding: 8px 16px 4px; font-size: 0.68rem; color: var(--text-dim); border-bottom: 1px solid var(--panel-border);">
+        RANDOM FOREST GINI FEATURE IMPORTANCES
+    </div>
+    <div id="signatureBody" class="signature-body">
+        <div style="color: var(--text-dim); font-size: 0.75rem; text-align: center; padding: 20px;">
+            [FETCHING MODEL SIGNATURE MATRIX...]
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/dashboard.js"></script>
+{% endblock %}
