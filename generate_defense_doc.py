@@ -2,8 +2,8 @@ import docx
 from docx.shared import Inches, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT
-from docx.oxml import OxmlElement, parse_xml
-from docx.oxml.ns import nsdecls, qn
+from docx.oxml import parse_xml
+from docx.oxml.ns import nsdecls
 from pathlib import Path
 
 def set_cell_background(cell, fill_hex):
@@ -23,23 +23,22 @@ def set_cell_margins(cell, top=120, bottom=120, left=150, right=150):
     )
     tcPr.append(tcMar)
 
-def create_defense_document(output_path):
+def create_layman_defense_doc(output_path):
     doc = docx.Document()
     
-    # Page setup - 1 inch margins
-    sections = doc.sections
-    for section in sections:
+    # 1 inch margins
+    for section in doc.sections:
         section.top_margin = Inches(1)
         section.bottom_margin = Inches(1)
         section.left_margin = Inches(1)
         section.right_margin = Inches(1)
 
     PRIMARY = RGBColor(0, 135, 81)     # UNN Green #008751
-    SECONDARY = RGBColor(30, 41, 59)   # Slate Navy #1E293B
-    TEXT_COLOR = RGBColor(51, 65, 85)  # Neutral Text #334155
+    SECONDARY = RGBColor(30, 41, 59)   # Slate #1E293B
+    TEXT_COLOR = RGBColor(51, 65, 85)  # Neutral Text
     MUTED = RGBColor(100, 116, 139)
+    GOLD = RGBColor(180, 83, 9)        # Deep Amber/Gold
 
-    # Style standard paragraph
     normal_style = doc.styles['Normal']
     normal_style.font.name = 'Calibri'
     normal_style.font.size = Pt(11)
@@ -47,7 +46,6 @@ def create_defense_document(output_path):
     normal_style.paragraph_format.line_spacing = 1.2
     normal_style.paragraph_format.space_after = Pt(6)
 
-    # Helper for adding styled headers
     def add_title(text):
         p = doc.add_paragraph()
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -89,41 +87,59 @@ def create_defense_document(output_path):
         run.font.color.rgb = SECONDARY
         return p
 
-    def add_callout(quote_text, speaker="WHAT TO SAY TO THE EXAMINERS:"):
+    def add_speech_box(spoken_text, context_label="EXACT WORDS TO SAY OUT LOUD:"):
         table = doc.add_table(rows=1, cols=1)
         table.alignment = WD_TABLE_ALIGNMENT.CENTER
         cell = table.cell(0, 0)
-        set_cell_background(cell, "F0FDF4") # subtle green tint
+        set_cell_background(cell, "F0FDF4") # soft green
         set_cell_margins(cell, top=140, bottom=140, left=200, right=200)
 
         p = cell.paragraphs[0]
         p.paragraph_format.space_after = Pt(4)
-        head = p.add_run(speaker + "\n")
+        head = p.add_run(f"🗣️ {context_label}\n")
         head.bold = True
         head.font.size = Pt(10)
         head.font.color.rgb = PRIMARY
 
-        body = p.add_run(f'"{quote_text}"')
+        body = p.add_run(f'"{spoken_text}"')
         body.italic = True
         body.font.size = Pt(11)
         body.font.color.rgb = SECONDARY
 
         doc.add_paragraph().paragraph_format.space_after = Pt(6)
 
-    # ---------------- DOCUMENT CONTENT ----------------
+    def add_analogy_box(analogy_text, title="💡 THE SIMPLE EVERYDAY ANALOGY (Think of it like this):"):
+        table = doc.add_table(rows=1, cols=1)
+        table.alignment = WD_TABLE_ALIGNMENT.CENTER
+        cell = table.cell(0, 0)
+        set_cell_background(cell, "FEF3C7") # soft warm gold
+        set_cell_margins(cell, top=120, bottom=120, left=180, right=180)
 
-    # Header / Meta
-    add_title("NIDS PROJECT DEFENSE MASTER GUIDE")
-    add_subtitle("B.Sc Project Defense Cheat Sheet & Oral Examination Preparation Guide\nDepartment of Computer Science • University of Nigeria, Nsukka (UNN)")
+        p = cell.paragraphs[0]
+        p.paragraph_format.space_after = Pt(4)
+        head = p.add_run(f"{title}\n")
+        head.bold = True
+        head.font.size = Pt(10)
+        head.font.color.rgb = GOLD
+
+        body = p.add_run(analogy_text)
+        body.font.size = Pt(10.5)
+        body.font.color.rgb = SECONDARY
+
+        doc.add_paragraph().paragraph_format.space_after = Pt(6)
+
+    # ---------------- DOCUMENT CONTENT ----------------
+    add_title("NIDS PROJECT DEFENSE GUIDE (LAYMAN'S EDITION)")
+    add_subtitle("How to Defend Your Project in Plain, Simple English\nDepartment of Computer Science • University of Nigeria, Nsukka (UNN)")
 
     # Metadata Box
     meta_table = doc.add_table(rows=4, cols=2)
     meta_table.alignment = WD_TABLE_ALIGNMENT.CENTER
     meta_data = [
         ("Project Topic:", "Design and Implementation of a Network Intrusion Detection System Using Random Forest Machine Learning Algorithm"),
-        ("Candidate / Presenter:", "Okafor Ugochukwu Stanley (Reg No: 2022/249519)"),
+        ("Presenter / Candidate:", "Okafor Ugochukwu Stanley (Reg No: 2022/249519)"),
         ("Group Members (Group 2):", "Okafor Michael Osinachi, Okafor Ugochukwu Stanley, Okechukwu Daniel Somtochukwu"),
-        ("Project Supervisor:", "Dr. U.K Umeh | Academic Year: 2026")
+        ("Supervisor:", "Dr. U.K Umeh | Academic Year: 2026")
     ]
     for i, (k, v) in enumerate(meta_data):
         row = meta_table.rows[i]
@@ -132,192 +148,235 @@ def create_defense_document(output_path):
         c1.width = Inches(4.3)
         set_cell_background(c0, "F8FAFC")
         set_cell_background(c1, "FFFFFF")
-        set_cell_margins(c0, 80, 80, 100, 100)
-        set_cell_margins(c1, 80, 80, 100, 100)
+        set_cell_margins(c0, 70, 70, 90, 90)
+        set_cell_margins(c1, 70, 70, 90, 90)
         
-        p0 = c0.paragraphs[0]
-        p0.paragraph_format.space_after = Pt(2)
-        r0 = p0.add_run(k)
-        r0.bold = True
-        r0.font.size = Pt(10)
-        r0.font.color.rgb = SECONDARY
-
-        p1 = c1.paragraphs[0]
-        p1.paragraph_format.space_after = Pt(2)
-        r1 = p1.add_run(v)
-        r1.font.size = Pt(10)
-
-    doc.add_paragraph().paragraph_format.space_after = Pt(12)
-
-    # Section 1: 2-Minute Opening Pitch
-    add_h1("SECTION 1: THE 2-MINUTE OPENING PITCH")
-    p = doc.add_paragraph(
-        "Deliver this immediately after the panel asks you to introduce yourself and your project. "
-        "Keep your back straight, maintain direct eye contact with Dr. Umeh and the examiners, speak audibly, and avoid rushing."
-    )
-    add_callout(
-        "Good morning, distinguished panel of examiners. My name is Okafor Ugochukwu Stanley, presenting on behalf of Group 2. "
-        "Our project is titled: Design and Implementation of a Network Intrusion Detection System (NIDS) Using Random Forest Machine Learning Algorithm, "
-        "supervised by Dr. U.K. Umeh.\n\n"
-        "Traditional perimeter firewalls rely on static signatures and static port rules. The moment an attacker modifies packet payloads or executes a zero-day exploit, rule-based defenses go blind. "
-        "To solve this, we engineered an intelligent, anomaly-based NIDS powered by an ensemble Random Forest classifier.\n\n"
-        "We trained our system on the benchmark NSL-KDD dataset across 41 network connection attributes, capturing protocol behaviors, byte exchange rates, and host-level traffic patterns. "
-        "We then operationalized the machine learning pipeline into a web security operations center—RADAR WATCHTOWER—featuring live stream simulation, single-connection diagnosis, automated batch CSV classification, and tamper-resistant audit logging.\n\n"
-        "With your permission, I would like to demonstrate how the system identifies and isolates network intrusions in real time."
-    )
-
-    # Section 2: Key Numbers & Model Performance
-    add_h1("SECTION 2: KEY NUMBERS & METRICS (MEMORIZE THESE)")
-    p = doc.add_paragraph(
-        "Examiners frequently test whether you know your exact experimental results or simply copied a template. "
-        "These are the exact verified figures from your training run on the official NSL-KDD benchmark:"
-    )
-
-    metrics_table = doc.add_table(rows=9, cols=3)
-    metrics_table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    table_headers = ["Parameter / Metric", "Exact Value", "Defense Explanation / Significance"]
-    for j, h in enumerate(table_headers):
-        cell = metrics_table.cell(0, j)
-        set_cell_background(cell, "008751")
-        set_cell_margins(cell, 100, 100, 120, 120)
-        p = cell.paragraphs[0]
-        p.paragraph_format.space_after = Pt(2)
-        r = p.add_run(h)
-        r.bold = True
-        r.font.size = Pt(10)
-        r.font.color.rgb = RGBColor(255, 255, 255)
-
-    metrics_rows = [
-        ("Dataset Used", "NSL-KDD Benchmark", "125,973 training records (KDDTrain+), 22,544 test records (KDDTest+)"),
-        ("Model & Configuration", "Random Forest (n=100)", "Ensemble of 100 Decision Trees, ColumnTransformer, OrdinalEncoder"),
-        ("Test Precision", "96.68%", "Crucial: When the alarm sounds, it is 96.7% accurate. Negligible false alarms."),
-        ("False Positive Rate", "2.82%", "Only 274 normal connections out of 9,711 were misclassified."),
-        ("Test Accuracy", "77.28%", "Evaluated on KDDTest+, which includes 17 novel zero-day attacks."),
-        ("Test Recall", "62.23%", "Coverage across both known training attacks and brand new test variants."),
-        ("F1-Score", "75.72%", "Harmonic mean of precision and recall on the hardest benchmark test set."),
-        ("Top Discriminant Features", "src_bytes (18.5%), flag (13.1%), dst_bytes (9.9%)", "Connection payload bytes and TCP flags are the highest predictors of attack.")
-    ]
-
-    for i, (col1, col2, col3) in enumerate(metrics_rows):
-        row = metrics_table.rows[i + 1]
-        c0, c1, c2 = row.cells[0], row.cells[1], row.cells[2]
-        c0.width = Inches(1.8)
-        c1.width = Inches(1.5)
-        c2.width = Inches(3.2)
-        bg = "F8FAFC" if i % 2 == 0 else "FFFFFF"
-        for c in (c0, c1, c2):
-            set_cell_background(c, bg)
-            set_cell_margins(c, 80, 80, 100, 100)
-
         p0 = c0.paragraphs[0]; p0.paragraph_format.space_after = Pt(2)
-        r0 = p0.add_run(col1); r0.bold = True; r0.font.size = Pt(9.5)
+        r0 = p0.add_run(k); r0.bold = True; r0.font.size = Pt(9.5); r0.font.color.rgb = SECONDARY
 
         p1 = c1.paragraphs[0]; p1.paragraph_format.space_after = Pt(2)
-        r1 = p1.add_run(col2); r1.bold = True; r1.font.size = Pt(9.5); r1.font.color.rgb = PRIMARY
-
-        p2 = c2.paragraphs[0]; p2.paragraph_format.space_after = Pt(2)
-        r2 = p2.add_run(col3); r2.font.size = Pt(9)
+        r1 = p1.add_run(v); r1.font.size = Pt(9.5)
 
     doc.add_paragraph().paragraph_format.space_after = Pt(10)
 
-    # Section 3: Live System Demo Walkthrough
-    add_h1("SECTION 3: STEP-BY-STEP LIVE DEMO SCRIPT")
+    # Section 1: What is this project really about?
+    add_h1("SECTION 1: THE WHOLE PROJECT EXPLAINED IN 60 SECONDS")
     p = doc.add_paragraph(
-        "Follow this exact script when demonstrating your system on screen. "
-        "Narrate your actions clearly before clicking."
+        "Before you memorize any technical words, understand what you actually built in real life:"
     )
 
-    steps = [
-        ("Step 1: Security & Authentication", 
-         "Show the login page. Mention: 'We implemented OWASP authentication best practices. Passwords use PBKDF2 hashing with SHA-256 and salt. After 5 consecutive failed attempts, the system enforces a 15-minute brute-force lockout.' Log in with your admin credentials."),
+    add_analogy_box(
+        "Imagine the University of Nigeria gate. A normal firewall is like a security guard checking student ID cards. "
+        "If a thief steals a genuine UNN student ID card, the security guard opens the gate and lets him in! "
+        "The guard only checks the card, not what the person does afterwards.\n\n"
+        "Our NIDS (Network Intrusion Detection System) is like smart CCTV cameras with AI installed all over campus. "
+        "Even if you entered with a valid ID, if you start climbing into office windows at 2 AM or carrying 50 heavy bags out of the ICT center, "
+        "the AI instantly notices that your BEHAVIOR is abnormal and rings the alarm bell: INTRUSION DETECTED!",
+        title="💡 THE GATE GUARD VS THE SMART CCTV (Firewall vs NIDS):"
+    )
+
+    p = doc.add_paragraph(
+        "In our software, instead of watching people walking around campus, our AI watches data packets flowing across network cables. "
+        "It checks 41 clues per connection—like how big the message is, how fast it was sent, and whether it failed to connect. "
+        "Then it tells the university IT admin: 'This packet is normal student traffic' or 'This packet is a hacker trying to attack!'"
+    )
+
+    # Section 2: Opening Pitch in Simple English
+    add_h1("SECTION 2: YOUR 2-MINUTE OPENING PITCH (PRACTICE THIS OUT LOUD)")
+    p = doc.add_paragraph(
+        "When Dr. Umeh or the examiners look at you and say: 'Stanley, introduce your project', take one breath, smile, and say this:"
+    )
+
+    add_speech_box(
+        "Good morning, Sirs and Mas. My name is Okafor Ugochukwu Stanley, presenting on behalf of Group 2. "
+        "Our project is titled: Design and Implementation of a Network Intrusion Detection System Using Random Forest Machine Learning Algorithm, "
+        "supervised by Dr. U.K. Umeh.\n\n"
+        "In simple terms, Sir: Traditional network firewalls only look at names and port numbers. "
+        "If a hacker disguises their attack as normal web browsing, the firewall lets them pass. "
+        "To solve this problem, we built an intelligent watchdog for the network.\n\n"
+        "Instead of relying on rigid rules, we trained an Artificial Intelligence model called Random Forest—which acts like a jury of 100 expert digital security guards—trained on over 125,000 recorded network interactions from the global NSL-KDD dataset.\n\n"
+        "We then built a complete, practical web application called RADAR WATCHTOWER. It lets a network administrator monitor traffic in real-time, test single suspicious connections, upload bulk network logs, and see instant threat verdicts with over 96% precision.\n\n"
+        "With your permission, I would love to show you a quick live demonstration of how it works."
+    )
+
+    # Section 3: The 4 Attacks Explained Simply
+    add_h1("SECTION 3: THE 4 TYPES OF ATTACKS (IN EVERYDAY LANGUAGE)")
+    p = doc.add_paragraph(
+        "Examiners love asking: 'What kinds of attacks can your system catch?' "
+        "Here is how to describe them so simply that anyone will understand:"
+    )
+
+    attacks_table = doc.add_table(rows=5, cols=3)
+    attacks_table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    att_headers = ["Attack Category", "Everyday Life Example", "What the Hacker is Doing"]
+    for j, h in enumerate(att_headers):
+        cell = attacks_table.cell(0, j)
+        set_cell_background(cell, "008751")
+        set_cell_margins(cell, 90, 90, 110, 110)
+        p = cell.paragraphs[0]; p.paragraph_format.space_after = Pt(2)
+        r = p.add_run(h); r.bold = True; r.font.size = Pt(9.5); r.font.color.rgb = RGBColor(255, 255, 255)
+
+    att_rows = [
+        ("1. DoS (Denial of Service)", 
+         "Like 10,000 people rushing to enter the UNN portal at the exact same second until the website crashes and no real student can check their results.", 
+         "Overwhelming the server with fake traffic so legitimate users get locked out."),
         
-        ("Step 2: RADAR Operations Dashboard",
-         "The dashboard loads with UNN aesthetics (Dark/Light mode). Point to the KPI cards: 'The dashboard gives the network administrator real-time situational awareness: total monitored packets, attack vs normal distribution, and live Chart.js threat curves. The system runs an asynchronous traffic simulator simulating real-world gateway throughput.'"),
-        
-        ("Step 3: Single Packet Live Diagnosis (Show-Stopper)",
-         "Navigate to Manual Predict. Click the preset 'Normal HTTP Traffic'. Say: 'Here, standard TCP 3-way handshake with SF flag and high destination bytes results in a clean NORMAL verdict.' Next, click the preset 'DoS SYN Flood Attack'. Say: 'Notice that destination bytes drop to 0, status flag becomes S0 (SYN sent, no ACK), and same-host connection rates spike. The Random Forest instantly flags this as an INTRUSION with 99% probability.'"),
+        ("2. Probe (Port Scanning)", 
+         "Like a thief walking quietly down a hotel corridor at night, gently twisting every single door handle to see which room was left unlocked.", 
+         "Testing every open port on a server to find an unpatched weakness."),
          
-        ("Step 4: Batch CSV Packet Ingestion",
-         "Navigate to Batch Upload. Drag and drop sample_upload.csv. Say: 'In enterprise deployments, gigabytes of network logs are ingested asynchronously. Our batch pipeline vectorizes 41 features per row, executes high-speed inference, assigns threat risk levels, and updates the database.'"),
+        ("3. R2L (Remote-to-Local)", 
+         "Like an outsider standing outside the staff quarters trying 500 different master keys to open the main front door from outside.", 
+         "An unauthorized remote user trying to break in and gain local access to a computer."),
          
-        ("Step 5: Forensic Audit Logs & Export",
-         "Navigate to History. Show the filterable table. Say: 'Every verdict is timestamped and logged with its complete feature vector for forensic analysis. The administrator can filter by classification status or export the audit trail directly to CSV.'")
+        ("4. U2R (User-to-Root)", 
+         "Like a student who is allowed inside the faculty library as a guest, but sneaks into the dean's private office to steal the exam stamp and master keys.", 
+         "A regular user with basic access exploiting a bug to become the supreme administrator ('root').")
     ]
 
-    for title, desc in steps:
+    for i, (c1, c2, c3) in enumerate(att_rows):
+        row = attacks_table.rows[i + 1]
+        cell0, cell1, cell2 = row.cells[0], row.cells[1], row.cells[2]
+        cell0.width = Inches(1.8)
+        cell1.width = Inches(2.7)
+        cell2.width = Inches(2.0)
+        bg = "F8FAFC" if i % 2 == 0 else "FFFFFF"
+        for c in (cell0, cell1, cell2):
+            set_cell_background(c, bg)
+            set_cell_margins(c, 70, 70, 90, 90)
+        
+        p0 = cell0.paragraphs[0]; p0.paragraph_format.space_after = Pt(2)
+        r0 = p0.add_run(c1); r0.bold = True; r0.font.size = Pt(9.5)
+
+        p1 = cell1.paragraphs[0]; p1.paragraph_format.space_after = Pt(2)
+        r1 = p1.add_run(c2); r1.font.size = Pt(9)
+
+        p2 = cell2.paragraphs[0]; p2.paragraph_format.space_after = Pt(2)
+        r2 = p2.add_run(c3); r2.font.size = Pt(9)
+
+    doc.add_paragraph().paragraph_format.space_after = Pt(10)
+
+    # Section 4: The Machine Learning in Plain English
+    add_h1("SECTION 4: THE MACHINE LEARNING CONCEPTS IN PLAIN ENGLISH")
+
+    add_h2("What is Random Forest?")
+    add_analogy_box(
+        "Imagine you have a difficult medical problem. If you ask just ONE doctor, he might make a mistake or miss something. "
+        "Instead, you go to a hospital board with 100 different doctors. "
+        "Each doctor inspects your medical tests from a slightly different angle. "
+        "At the end, all 100 doctors vote: 95 say 'healthy', 5 say 'sick'. You trust the majority vote!\n\n"
+        "That is exactly what Random Forest does. It builds 100 Decision Trees. Each tree votes on whether a packet is safe or an attack. The majority vote wins.",
+        title="💡 THE COUNCIL OF 100 DOCTORS (Random Forest):"
+    )
+
+    add_h2("Why 77% Accuracy is Actually Impressive (Don't let them trick you!)")
+    add_analogy_box(
+        "Suppose a teacher gives students 10 past question papers to study for an exam. "
+        "In school A, the teacher gives the exact same past questions in the final exam. The students score 99%! But did they really learn? No, they just memorized the past questions.\n\n"
+        "In school B, the examiner deliberately adds 17 BRAND NEW questions that were never seen before in any past question paper. Scoring 77% on such a tough, surprise exam proves the student truly understands the subject!\n\n"
+        "In our project, we used the official benchmark dataset called KDDTest+. It intentionally includes 17 new attack types that the AI was never taught in training. 77% is the genuine, honest academic score against unknown zero-day attacks.",
+        title="💡 THE UNSEEN EXAM QUESTIONS (Why 77% Accuracy is Honest Science):"
+    )
+
+    add_h2("Why 96.7% Precision is the Real Superstar Metric")
+    add_analogy_box(
+        "Think of a car alarm. If your car alarm screams every time a breeze blows or a cat walks past, by the third day, "
+        "you and your neighbors will ignore it or turn it off. When a real thief comes, nobody cares!\n\n"
+        "In cybersecurity, false alarms are dangerous. Our system achieves 96.68% Precision and only a 2.8% False Alarm rate. "
+        "That means when our watchdog barks, you know with 97% certainty that someone is actually trying to steal the car!",
+        title="💡 THE CRY-WOLF CAR ALARM (Why High Precision Matters):"
+    )
+
+    # Section 5: The Live Demo (What to say while clicking)
+    add_h1("SECTION 5: LIVE DEMO NARRATION (WHAT TO SAY ON SCREEN)")
+    p = doc.add_paragraph(
+        "When you are standing in front of the laptop/projector, talk step-by-step as you click:"
+    )
+
+    demo_steps = [
+        ("Action 1: Show the Login Page",
+         "Say: 'Sir, notice our login screen designed with UNN green and gold branding. We protected it against password guessing: if anyone tries wrong passwords 5 times, the system locks them out for 15 minutes.' -> Click login."),
+        
+        ("Action 2: Show the Dashboard",
+         "Say: 'This is the RADAR WATCHTOWER dashboard. It gives the network engineer a birds-eye view of everything happening right now. These cards show total traffic processed, attack percentages, and live graphs showing packet flow.'"),
+         
+        ("Action 3: Demonstrate Single Packet Test",
+         "Say: 'Let us test a single connection manually. I will click Manual Predict. First, I click the Normal Traffic button. Notice that we have normal web browsing data. When I click Analyze, the AI votes: NORMAL traffic with high confidence.'\n\n"
+         "'Now, watch what happens when I switch to the DoS Attack button. The destination bytes drop to zero, and the status flag becomes S0—meaning someone sent a request but refused to finish the connection, leaving the server hanging. I click Analyze: instantly, our system flags it in bright red: INTRUSION / ATTACK!'"),
+         
+        ("Action 4: Demonstrate Batch File Upload",
+         "Say: 'In real universities like UNN, millions of connections happen every day. An admin cannot test packets one by one. So we built this Batch Upload tool. I will upload a file containing dozens of recorded connections. In less than one second, the system checks every single packet, sorts them, and displays which ones were attacks and which ones were safe.'"),
+         
+        ("Action 5: Show the Audit History",
+         "Say: 'Finally, here is the History page. Every single decision made by our AI is recorded with an exact date, time, and safety verdict. The administrator can search through it or export the complete report to Excel/CSV for university management.'")
+    ]
+
+    for title, desc in demo_steps:
         add_h2(title)
-        p = doc.add_paragraph()
-        p.paragraph_format.space_after = Pt(6)
-        r = p.add_run(desc)
-        r.font.size = Pt(10.5)
+        add_speech_box(desc, context_label="NARRATION:")
 
-    # Section 4: The 8 Tough Defense Questions & Winning Answers
-    add_h1("SECTION 4: THE 8 TOUGH QUESTIONS EXAMINERS LOVE TO ASK")
+    # Section 6: Top 6 Questions in Layman Terms
+    add_h1("SECTION 6: THE 6 MOST COMMON EXAMINER QUESTIONS (ANSWERED IN SIMPLE ENGLISH)")
 
-    qa_list = [
-        ("Question 1: Why did you choose Random Forest over Deep Learning (CNN/LSTM) or Logistic Regression?",
-         "Sir/Ma, we evaluated that trade-off carefully: "
-         "1) Logistic Regression is a linear model that fails to capture complex non-linear interactions across 41 network attributes. "
-         "2) Deep Learning models (like CNN/LSTM) act as black boxes, require GPU compute, and exhibit inference latency too high for packet inspection at line speed. "
-         "3) Random Forest is an ensemble of decision trees using bagging (bootstrap aggregation). It natively handles mixed continuous and categorical data, resists overfitting, provides transparent feature importance (Explainable AI), and executes predictions in under 2 milliseconds on commodity CPU hardware."),
-        
-        ("Question 2: Isn't 77% accuracy too low for machine learning?",
-         "That is an insightful question, Sir. In academic literature, papers reporting 98% or 99% accuracy on KDD typically perform a random split on KDDTrain+, which creates severe data leakage. "
-         "Our research evaluated the model against the official, standardized KDDTest+ benchmark. KDDTest+ was intentionally designed by cybersecurity researchers to contain 17 novel zero-day attack variants (such as mscan, udpstorm, and ps) that never appeared in the training set. "
-         "In network security, Precision (96.68%) and False Positive Rate (2.82%) are vastly more critical than raw accuracy. Our system ensures legitimate network traffic is virtually never blocked, and any triggered alert represents a high-probability security incident."),
+    questions = [
+        ("Examiner: 'Why did you use Random Forest instead of Deep Learning (like Neural Networks)?'",
+         "Sir, Deep Learning models are like huge 'black boxes'—they require very expensive graphics cards (GPUs) and take longer to think before giving an answer. "
+         "On a busy network where thousands of packets arrive every second, you need an answer in less than 2 milliseconds. "
+         "Random Forest runs instantly on ordinary office computers, uses very little battery and CPU, and unlike neural networks, "
+         "it can actually tell us WHICH clues made it choose its verdict (Explainable AI)."),
          
-        ("Question 3: How is this NIDS different from a standard Firewall?",
-         "A Firewall acts as a security guard checking static ID badges at the door—filtering based on static IP addresses, port numbers, or protocol types. If malicious traffic is disguised over port 80 (HTTP) or port 443 (HTTPS), the firewall allows it through. "
-         "Our NIDS functions like a security camera with behavioral analysis inside the building. It inspects packet dynamics, payload byte ratios, error rates, and connection frequency to detect malicious behavior regardless of which port or address the traffic originates from."),
+        ("Examiner: 'Why is your accuracy 77%? Isn't that too low?'",
+         "Sir, if any student tells you they got 99% on the KDD dataset, it usually means they tested the model on the same type of data they used for training. "
+         "We used the official KDDTest+ benchmark, which intentionally has 17 brand-new attack tricks that were never taught during training. "
+         "More importantly, in cybersecurity, what matters most is: does the system cry wolf? Our false alarm rate is only 2.8%, and when our system warns of an attack, it is 96.7% accurate. That is what makes it practically usable in real life."),
          
-        ("Question 4: How does your pipeline handle categorical text features like protocol_type or service?",
-         "We built a Scikit-Learn Pipeline integrating a ColumnTransformer. Categorical features—protocol_type (tcp/udp/icmp), service, and flag—are encoded using an OrdinalEncoder with handle_unknown='use_encoded_value' set to -1. "
-         "This guarantees that if the system encounters an unmapped service during live inspection, the application will not crash; it assigns a fallback token and completes classification safely."),
+        ("Examiner: 'What is the difference between this and a normal Firewall?'",
+         "Sir, a Firewall is like a gate man checking ID cards at the gate. If a hacker enters through the main open gate (port 80 for internet browsing), the firewall lets him in because the gate is supposed to be open. "
+         "Our NIDS is like an intelligent surveillance camera inside the building. It doesn't care which gate you used; it watches your behavior once you are inside to catch suspicious activity."),
          
-        ("Question 5: What are the most important features that identify an intrusion?",
-         "According to Gini impurity feature importance derived from our 100 decision trees: "
-         "1) src_bytes (18.53%): Source-to-destination payload bytes. Abnormal surges or zero-byte anomalies are typical of DoS and scanning attacks. "
-         "2) flag (13.14%): TCP connection status flags. Normal traffic establishes connection (SF), whereas SYN floods or port scans leave connections half-open (S0 or REJ). "
-         "3) dst_bytes (9.91%): Destination-to-source bytes. "
-         "Together, these top features drive over 41% of the model's predictive capability."),
+        ("Examiner: 'What are the most important clues your AI looks for?'",
+         "From our 100 decision trees, the top 3 clues are:\n"
+         "1. Source Bytes (18.5%): How much data the sender is pushing. Attackers usually send abnormally huge or zero-byte packets.\n"
+         "2. Connection Flag (13.1%): Did the conversation finish politely (SF flag), or did the sender leave the line hanging open (S0 flag)?\n"
+         "3. Destination Bytes (9.9%): How much data came back in reply."),
          
-        ("Question 6: What happens if the database locks or network connection drops?",
-         "Our system decouples model inference from database persistence. The Random Forest model (rf_model.joblib) is deserialized into server RAM upon application startup. Real-time classification executes completely in-memory. "
-         "Furthermore, all web assets—fonts, icons, and Chart.js—are bundled locally. The application can run entirely offline in an air-gapped security operations center without external internet dependencies."),
+        ("Examiner: 'What happens if the internet goes off or your server loses connection?'",
+         "Sir, our entire system is designed to run 100% offline. All our charts, fonts, and the trained AI brain (rf_model.joblib) are stored right here on the computer. "
+         "It does not require internet connection or any cloud service to inspect network packets and protect the campus."),
          
-        ("Question 7: How did you test and validate the system before deployment?",
-         "We authored an automated test suite containing 17 comprehensive test cases (test_suite.py) spanning unit testing, database CRUD integrity, authentication lockouts, single and batch ML inference, and edge-case payload validation. All 17 tests execute with a 100% pass rate."),
-         
-        ("Question 8: What was YOUR specific personal contribution to this project?",
-         "As a core member of Group 2, my contributions centered on: "
-         "1) Constructing the machine learning preprocessing and training pipeline on the NSL-KDD dataset. "
-         "2) Developing the Flask backend architecture, database schema, and OWASP security controls. "
-         "3) Engineering the operations dashboard interface and automating the 17-part test suite to verify end-to-end reliability.")
+        ("Examiner: 'Stanley, what was your personal contribution to this group project?'",
+         "Sir, as a key member of Group 2, I personally worked on:\n"
+         "1. Training the Random Forest AI model and evaluating its performance metrics on the NSL-KDD benchmark.\n"
+         "2. Building the backend server and security database in Python Flask.\n"
+         "3. Designing the user interface and running the 17 automated test cases in test_suite.py to make sure the software has zero bugs.")
     ]
 
-    for q, a in qa_list:
+    for q, a in questions:
         add_h2(q)
-        add_callout(a, speaker="RECOMMENDED VERBATIM RESPONSE:")
+        add_speech_box(a, context_label="YOUR DIRECT ANSWER:")
 
-    # Section 5: Pre-Flight Defense Checklist
-    add_h1("SECTION 5: PRE-FLIGHT DEFENSE DAY CHECKLIST")
-    checklist_items = [
-        "Laptop fully charged (100%) with power adapter plugged in.",
-        "Flask app tested and running: open terminal, run 'python app.py', test http://127.0.0.1:5000.",
-        "Browser opened in clean full-screen mode (F11), bookmarks bar hidden.",
-        "GitHub repository (https://github.com/Stanloski/NIDS-Project) open in a separate tab to show version control if asked.",
-        "Print out or review this guide 30 minutes before entering the examination hall.",
-        "Rule of Delivery: Speak calmly, avoid interrupting examiners, acknowledge their questions with 'Thank you, Sir/Ma', and answer directly."
+    # Section 7: Final Words of Encouragement
+    add_h1("SECTION 7: STANLEY'S DEFENSE DAY SURVIVAL RULES")
+    rules = [
+        "Rule 1: Don't talk too fast. When we are nervous, we tend to rush. Force yourself to speak slowly and clearly. It makes you sound confident and in control.",
+        "Rule 2: Don't argue with an examiner. If an examiner says: 'I think you should have added feature X', don't say 'No, that is wrong'. Say: 'That is a very good point, Sir. That is actually one of the key recommendations we highlighted for future work in Chapter 5.' (This disarms them completely!).",
+        "Rule 3: Keep your laptop plugged in. Nothing is more painful than a laptop shutting down right when you are showing a demo.",
+        "Rule 4: Remember: YOU built this. You know how the buttons work, you know where the files are, and you know the metrics. Walk into that room with your head high!"
     ]
-    for item in checklist_items:
+    for r in rules:
         p = doc.add_paragraph(style='List Bullet')
-        p.paragraph_format.space_after = Pt(3)
-        r = p.add_run(item)
-        r.font.size = Pt(10.5)
+        p.paragraph_format.space_after = Pt(4)
+        run = p.add_run(r)
+        run.font.size = Pt(10.5)
 
     doc.save(str(output_path))
-    print(f"Successfully generated defense guide at: {output_path}")
+    print(f"Successfully generated Layman Edition defense guide at: {output_path}")
 
 if __name__ == "__main__":
-    out = Path(r"c:\Users\Dell\Desktop\NIDS Project\NIDS_Project_Defense_Master_Guide.docx")
-    create_defense_document(out)
+    out = Path(r"c:\Users\Dell\Desktop\NIDS Project\NIDS_Project_Defense_Layman_Guide.docx")
+    create_layman_defense_doc(out)
+    try:
+        master_out = Path(r"c:\Users\Dell\Desktop\NIDS Project\NIDS_Project_Defense_Master_Guide.docx")
+        create_layman_defense_doc(master_out)
+    except Exception as e:
+        print(f"Note: Master guide is currently open in Word ({e}), saved Layman edition separately.")
